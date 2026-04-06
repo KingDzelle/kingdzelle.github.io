@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Login/Signup with Calculator & Notes Hub</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  flex-direction: column;
+  color: white;
+  transition: 0.5s;
+}
+h1#welcome {
+  font-size: 5em;
+  text-shadow: 0 0 20px #fff, 0 0 40px #ff00ff;
+  text-align: center;
+}
+h1#welcome span {
+  font-size:16px;
+  display:block;
+  color:#0ff;
+  margin-top:5px;
+}
+.ribbon {
+  position: absolute;
+  width: 8px;
+  height: 25px;
+  top: -50px;
+  opacity: 0.7;
+  animation: fall linear infinite;
+}
+@keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+.buttons { display: none; flex-direction: column; gap: 20px; }
+.neon-btn {
+  padding: 15px 40px;
+  font-size: 18px;
+  border: 2px solid #0ff;
+  color: #0ff;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff;
+  z-index: 10;
+}
+.neon-btn:hover { background: #0ff; color: black; }
+.form { display: none; flex-direction: column; gap: 10px; z-index: 10; position: relative; }
+.input-container { position: relative; }
+input {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #0ff;
+  background: transparent;
+  color: #0ff;
+  width: 250px;
+}
+textarea {
+  width: 300px;
+  height: 200px;
+  background: #000;
+  border: 1px solid #0ff;
+  color: #0ff;
+  padding: 10px;
+  border-radius: 10px;
+  resize: none;
+}
+.eye-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #0ff;
+  font-size: 16px;
+}
+#error, #loginError, #signupError { font-size: 12px; color: red; }
+#backBtn {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 20px;
+  color: #0ff;
+  cursor: pointer;
+  z-index: 20;
+}
+#loader {
+  display: none;
+  font-size: 60px;
+  animation: spin 0.3s infinite linear;
+  z-index: 30;
+  position: absolute;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Game options */
+#gameSection {
+  display: none;
+  flex-direction: row;
+  gap: 50px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+  background: #000;
+  padding: 50px;
+  border-radius: 20px;
+}
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  color: #0ff;
+  text-align: center;
+}
+.option img {
+  width: 120px;
+  height: 120px;
+  border: 2px solid #0ff;
+  border-radius: 15px;
+  box-shadow: 0 0 10px #0ff;
+  margin-bottom: 10px;
+}
+.option:hover img {
+  transform: scale(1.1);
+  transition: 0.3s;
+}
+
+/* Calculator modal */
+#calculatorModal, #notesModal, #notesHubModal {
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:rgba(0,0,0,0.8);
+  justify-content:center; align-items:center;
+  z-index:50; flex-direction:column;
+}
+.calc-phone, .notes-container, .notes-hub-container {
+  background:#111; padding:20px; border-radius:30px; display:flex; flex-direction:column; align-items:center; box-shadow:0 0 30px #0ff;
+}
+.calc-title { font-size:20px; color:#0ff; margin-bottom:10px; font-weight:bold; }
+#calcDisplay { width:260px; height:50px; background:#000; color:#0ff; font-size:24px; text-align:right; padding:10px; border-radius:10px; border:1px solid #0ff; margin-bottom:10px; }
+.calc-buttons { display:grid; grid-template-columns: repeat(5, 50px); grid-gap:5px; }
+.calc-buttons button { padding:10px; font-size:16px; border:none; border-radius:10px; background:#0ff; color:#000; cursor:pointer; box-shadow: 0 0 5px #0ff; }
+.calc-buttons button:hover { background:#00ffcc; }
+.close-btn { margin-top:10px; color:#0ff; cursor:pointer; text-align:center; }
+
+.notes-list {
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #0ff;
+  padding: 10px;
+  border-radius: 10px;
+  background:#000;
+  color:#0ff;
+  margin-top:10px;
+}
+.note-item {
+  border-bottom: 1px solid #0ff;
+  padding: 5px 0;
+  margin-bottom: 5px;
+}
+.note-timestamp { font-size: 10px; color:#0aa; }
+</style>
+</head>
+<body>
+
+<h1 id="welcome">
+  WELCOME
+  <span>BY FRANK MICHAEL</span>
+</h1>
+
+<div class="buttons" id="buttons">
+  <button class="neon-btn" onclick="showLogin()">LOGIN</button>
+  <button class="neon-btn" onclick="showSignup()">SIGN UP</button>
+</div>
+
+<div id="backBtn" onclick="goBack()"><--</div>
+
+<!-- Login Form -->
+<div class="form" id="loginForm">
+  <input id="loginEmail" placeholder="Email">
+  <div class="input-container">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <span class="eye-toggle" onclick="togglePassword('loginPassword', this)">👁️</span>
+  </div>
+  <div id="loginError"></div>
+  <button onclick="login()">LOGIN</button>
+</div>
+
+<!-- Signup Form -->
+<div class="form" id="signupForm">
+  <input id="signupEmail" placeholder="Email">
+  <input id="signupUsername" placeholder="Username">
+  <div class="input-container">
+    <input id="signupPassword" type="password" placeholder="Password">
+    <span class="eye-toggle" onclick="togglePassword('signupPassword', this)">👁️</span>
+  </div>
+  <input id="signupAge" type="number" placeholder="Age">
+  <div id="signupError"></div>
+  <button onclick="signup()">SIGN UP</button>
+</div>
+
+<div id="loader">🎲</div>
+
+<!-- Game Options -->
+<div id="gameSection">
+  <div class="option" onclick="openCalculator()">
+    <img src="calculator.png" alt="Calculator">
+    <span>Scientific Calculator</span>
+  </div>
+  <div class="option" onclick="openNotes()">
+    <img src="notes.png" alt="Notes Keeper">
+    <span>Notes Keeper</span>
+  </div>
+  <div class="option" onclick="openNotesHub()">
+    <img src="hub.png" alt="Notes Hub">
+    <span>Notes Hub</span>
+  </div>
+</div>
+
+<!-- Calculator Modal -->
+<div id="calculatorModal">
+  <div class="calc-phone">
+    <div class="calc-title">FRANK MICHAEL</div>
+    <input type="text" id="calcDisplay" readonly>
+    <div class="calc-buttons">
+      <button onclick="calcPress('AC')">AC</button>
+      <button onclick="calcPress('DEL')">DEL</button>
+      <button onclick="calcPress('(')">(</button>
+      <button onclick="calcPress(')')">)</button>
+      <button onclick="calcPress('%')">%</button>
+
+      <button onclick="calcPress('7')">7</button>
+      <button onclick="calcPress('8')">8</button>
+      <button onclick="calcPress('9')">9</button>
+      <button onclick="calcPress('/')">/</button>
+      <button onclick="calcPress('**2')">x²</button>
+
+      <button onclick="calcPress('4')">4</button>
+      <button onclick="calcPress('5')">5</button>
+      <button onclick="calcPress('6')">6</button>
+      <button onclick="calcPress('*')">*</button>
+      <button onclick="calcPress('Math.sqrt(')">√</button>
+
+      <button onclick="calcPress('1')">1</button>
+      <button onclick="calcPress('2')">2</button>
+      <button onclick="calcPress('3')">3</button>
+      <button onclick="calcPress('-')">-</button>
+      <button onclick="calcPress('**(1/3)')">∛</button>
+
+      <button onclick="calcPress('0')">0</button>
+      <button onclick="calcPress('.')">.</button>
+      <button onclick="calcPress('+')">+</button>
+      <button onclick="calcPress('ABC')">ABC/</button>
+      <button onclick="calculateResult()">=</button>
+
+      <button onclick="calcPress('Math.sin(')">sin</button>
+      <button onclick="calcPress('Math.cos(')">cos</button>
+      <button onclick="calcPress('Math.tan(')">tan</button>
+      <button onclick="calcPress('Math.log(')">log</button>
+      <button onclick="calcPress('Math.log(')">ln</button>
+      <button onclick="calcPress('Math.hypot(')">hyp</button>
+    </div>
+    <div class="close-btn" onclick="closeCalculator()">Close</div>
+  </div>
+</div>
+
+<!-- Notes Modal -->
+<div id="notesModal">
+  <div class="notes-container">
+    <div style="margin-bottom:10px; font-size:24px; color:#0ff;">Notes Keeper</div>
+    <textarea id="notesArea" placeholder="Write your notes here..."></textarea>
+    <button onclick="saveNotes()" style="margin-top:10px; background:#0ff; color:black; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Save Notes</button>
+    <div class="close-btn" onclick="closeNotes()">Close Notes</div>
+  </div>
+</div>
+
+<!-- Notes Hub Modal -->
+<div id="notesHubModal">
+  <div class="notes-hub-container">
+    <div style="margin-bottom:10px; font-size:24px; color:#0ff;">Notes Hub</div>
+    <div id="notesList" class="notes-list"></div>
+    <div class="close-btn" onclick="closeNotesHub()">Close Hub</div>
+  </div>
+</div>
+
+<script>
+// ribbons
+const colors=["#FF3CAC","#784BA0","#2B86C5","#FFB347","#00FFAA"];
+const ribbons=[];
+for(let i=0;i<60;i++){const r=document.createElement("div");r.className="ribbon";r.style.left=Math.random()*window.innerWidth+"px";r.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];r.style.width=Math.random()*8+5+"px";r.style.height=Math.random()*30+15+"px";r.style.animationDuration=(Math.random()*3+2)+"s";r.style.animationDelay=Math.random()*5+"s";document.body.appendChild(r);ribbons.push(r);}
+setTimeout(()=>{document.getElementById("welcome").style.display="none";document.getElementById("buttons").style.display="flex";},7000);
+
+// form handling
+function hideAllForms(){document.getElementById("loginForm").style.display="none";document.getElementById("signupForm").style.display="none";document.getElementById("loginError").innerText="";document.getElementById("signupError").innerText="";document.getElementById("buttons").style.display="none";}
+function showLogin(){hideAllForms();document.getElementById("loginForm").style.display="flex";document.getElementById("backBtn").style.display="block";}
+function showSignup(){hideAllForms();document.getElementById("signupForm").style.display="flex";document.getElementById("backBtn").style.display="block";}
+function goBack(){hideAllForms();document.getElementById("buttons").style.display="flex";document.getElementById("backBtn").style.display="none";}
+function getUsers(){ return JSON.parse(localStorage.getItem("users") || "[]"); }
+function saveUsers(users){ localStorage.setItem("users", JSON.stringify(users)); }
+function isValidEmail(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+function togglePassword(id, eye){ const input=document.getElementById(id); if(input.type==="password"){input.type="text"; eye.textContent="🙈";} else{input.type="password"; eye.textContent="👁️";}}
+function login(){ const email=document.getElementById("loginEmail").value.trim(); const password=document.getElementById("loginPassword").value.trim(); const error=document.getElementById("loginError"); if(!email||!password){error.innerText="Provide all Information"; return;} if(!isValidEmail(email)){error.innerText="LOGIN FAILED: Invalid Email";return;} const users=getUsers(); const user=users.find(u=>u.email===email&&u.password===password); if(user){startLoader();}else{error.innerText="LOGIN FAILED";}}
+function signup(){ const email=document.getElementById("signupEmail").value.trim(); const username=document.getElementById("signupUsername").value.trim(); const password=document.getElementById("signupPassword").value.trim(); const age=parseInt(document.getElementById("signupAge").value.trim()); const error=document.getElementById("signupError"); if(!email||!username||!password||!age){error.innerText="Provide all Information"; return;} if(!isValidEmail(email)){error.innerText="SIGN UP FAILED: Invalid Email"; return;} if(age<7){error.innerText="SIGN UP FAILED DUE TO RESTRICTION"; return;} const users=getUsers(); if(users.some(u=>u.email===email)){error.innerText="Email already used"; return;} users.push({email,username,password,age}); saveUsers(users); startLoader();}
+function startLoader(){ribbons.forEach(r=>r.remove());hideAllForms();document.getElementById("backBtn").style.display="none";document.getElementById("loader").style.display="block";document.body.style.background="#000"; setTimeout(()=>{document.getElementById("loader").style.display="none"; document.getElementById("gameSection").style.display="flex";},3000);}
+
+// calculator
+function openCalculator(){document.getElementById("calculatorModal").style.display="flex";}
+function closeCalculator(){document.getElementById("calculatorModal").style.display="none";}
+function calcPress(val){const display=document.getElementById("calcDisplay");if(val==='AC'){display.value='';return;} if(val==='DEL'){display.value=display.value.slice(0,-1);return;} display.value+=val;}
+function calculateResult(){const display=document.getElementById("calcDisplay"); try{display.value=eval(display.value);}catch(e){display.value="Error";}}
+
+// notes
+function openNotes(){document.getElementById("notesModal").style.display="flex";}
+function closeNotes(){document.getElementById("notesModal").style.display="none";}
+function saveNotes(){const notes=document.getElementById("notesArea").value; if(!notes) return; const existing=JSON.parse(localStorage.getItem("savedNotes")||"[]"); const timestamp=new Date().toLocaleString(); existing.push({content:notes, timestamp}); localStorage.setItem("savedNotes",JSON.stringify(existing)); document.getElementById("notesArea").value=""; alert("Notes saved!");}
+
+// notes hub
+function openNotesHub(){document.getElementById("notesHubModal").style.display="flex"; renderNotesHub();}
+function closeNotesHub(){document.getElementById("notesHubModal").style.display="none";}
+function renderNotesHub(){const list=document.getElementById("notesList"); const notes=JSON.parse(localStorage.getItem("savedNotes")||"[]"); list.innerHTML=""; notes.slice().reverse().forEach((n,index)=>{ const div=document.createElement("div"); div.className="note-item"; const delBtn=document.createElement("button"); delBtn.textContent="Delete"; delBtn.style.float="right"; delBtn.style.background="#ff0055"; delBtn.style.color="#fff"; delBtn.style.border="none"; delBtn.style.borderRadius="5px"; delBtn.style.cursor="pointer"; delBtn.style.fontSize="10px"; delBtn.onclick=()=>deleteNote(notes.length-1-index); div.innerHTML=`<div>${n.content}</div><div class="note-timestamp">${n.timestamp}</div>`; div.appendChild(delBtn); list.appendChild(div);});}
+function deleteNote(idx){let notes=JSON.parse(localStorage.getItem("savedNotes")||"[]"); notes.splice(idx,1); localStorage.setItem("savedNotes",JSON.stringify(notes)); renderNotesHub();}
+</script>
+</body>
+</html>
